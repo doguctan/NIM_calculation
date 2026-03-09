@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ title_prefix }} NIM Dashboard</title>
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 16px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    select, button { padding: 6px 8px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 12px; }
+    @media (min-width: 1100px) { .grid { grid-template-columns: 1fr 1fr; } }
+    .card { border: 1px solid #e6e6e6; border-radius: 10px; padding: 10px; }
+    .hint { color: #666; font-size: 13px; }
+    .error { color: #b00020; white-space: pre-wrap; }
+    .kpi { font-size: 13px; color: #333; }
+    .kpi code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h2>{{ title_prefix }} NIM Dashboard</h2>
+
+  <div class="row">
+    <label>
+      data source:
+      <select id="source">
+        {% for s in data_sources %}
+          <option value="{{ s }}" {% if s == default_source %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>
+      date_0:
+      <select id="date0">
+        {% for d in available_dates %}
+          <option value="{{ d }}" {% if d == default_date_0 %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>
+      date_1:
+      <select id="date1">
+        {% for d in available_dates %}
+          <option value="{{ d }}" {% if d == default_date_1 %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <button id="refreshBtn">Refresh</button>
+    <button id="nimToggleBtn" data-nim-type="TRY">NIM tipi: TRY</button>
+    <span class="hint">Dropdown değişince otomatik günceller. NIM tipi butonundan TRY / FX arasında geçiş yapabilirsiniz.</span>
+  </div>
+
+  <div id="status" class="kpi" style="margin-top:10px;"></div>
+  <div id="err" class="error" style="margin-top:6px;"></div>
+
+  <div class="grid">
+    <div class="card"><div id="wf1"></div></div>
+    <div class="card"><div id="wf2"></div></div>
+    <div class="card"><div id="wf3"></div></div>
+    <div class="card"><div id="wf4"></div></div>
+  </div>
+
+<script>
+  const elSource = document.getElementById("source");
+  const elDate0 = document.getElementById("date0");
+  const elDate1 = document.getElementById("date1");
+  const elErr   = document.getElementById("err");
+  const elStatus= document.getElementById("status");
+  const btn     = document.getElementById("refreshBtn");
+  const nimToggleBtn = document.getElementById("nimToggleBtn");
+
+  let currentNimType = (nimToggleBtn && nimToggleBtn.dataset.nimType) || "TRY";
+
+  async function refreshDates() {
+    const src = elSource.value;
+    elErr.textContent = "";
+    elStatus.textContent = "Loading dates...";
+
+    const res = await fetch(`/api/dates?source=${encodeURIComponent(src)}`);
+    const data = await res.json();
+
+    if (!data.ok) {
+      elStatus.textContent = "";
+      elErr.textContent = data.error || "Date load error";
+      return;
+    }
+
+    const dates = data.dates || [];
+    elDate0.innerHTML = "";
+    elDate1.innerHTML = "";
+
+    dates.forEach(d => {
+      const o1 = document.createElement("option");
+      o1.value = d; o1.text = d;
+      const o2 = document.createElement("option");
+      o2.value = d; o2.text = d;
+      elDate0.appendChild(o1);
+      elDate1.appendChild(o2);
+    });
+
+    if (dates.length >= 2) {
+      elDate0.value = dates[dates.length - 2];
+      elDate1.value = dates[dates.length - 1];
+    } else if (dates.length === 1) {
+      elDate0.value = dates[0];
+      elDate1.value = dates[0];
+    }
+
+    await fetchAndRender();
+  }
+
+  async function fetchAndRender() {
+    elErr.textContent = "";
+    elStatus.textContent = "Loading...";
+
+    const src = elSource.value;
+    const d0 = elDate0.value;
+    const d1 = elDate1.value;
+
+    const url = `/api/waterfalls?source=${encodeURIComponent(src)}&date_0=${encodeURIComponent(d0)}&date_1=${encodeURIComponent(d1)}&nim_type=${encodeURIComponent(currentNimType)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.ok) {
+      elStatus.textContent = "";
+      elErr.textContent = data.error || "Unknown error";
+      return;
+    }
+
+    const ni = data.nim_info || {};
+    const fmt = (x) => (typeof x === 'number' ? x.toFixed(6) : x);
+    elStatus.innerHTML =
+      `nim_start: <code>${fmt(ni.nim_start)}</code> | ` +
+      `nim_end: <code>${fmt(ni.nim_end)}</code> | ` +
+      `nim_change: <code>${fmt(ni.nim_change)}</code> | ` +
+      `recon_gap_after_scaling: <code>${fmt(ni.recon_gap_after_scaling)}</code>`;
+
+    const figs = data.figs;
+    Plotly.react("wf1", figs.wf1.data, figs.wf1.layout, {responsive: true});
+    Plotly.react("wf2", figs.wf2.data, figs.wf2.layout, {responsive: true});
+    Plotly.react("wf3", figs.wf3.data, figs.wf3.layout, {responsive: true});
+    Plotly.react("wf4", figs.wf4.data, figs.wf4.layout, {responsive: true});
+  }
+
+  elSource.addEventListener("change", refreshDates);
+  elDate0.addEventListener("change", fetchAndRender);
+  elDate1.addEventListener("change", fetchAndRender);
+  btn.addEventListener("click", fetchAndRender);
+
+  if (nimToggleBtn) {
+    nimToggleBtn.addEventListener("click", () => {
+      currentNimType = currentNimType === "TRY" ? "FX" : "TRY";
+      nimToggleBtn.dataset.nimType = currentNimType;
+      nimToggleBtn.textContent = `NIM tipi: ${currentNimType}`;
+      fetchAndRender();
+    });
+  }
+
+  refreshDates();
+</script>
+</body>
+</html>
