@@ -17,6 +17,7 @@ Features
 Run
     pip install -r requirements.txt
     python app.py
+    ...t
 """
 
 import json
