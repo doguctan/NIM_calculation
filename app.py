@@ -70,6 +70,7 @@ REPO_PRODUCT_NAME = "Repurchase agreements"      # unused now, kept for compatib
 Y_MIN_FLOOR = 350
 Y_MIN_SPAN = 80
 Y_PAD_RATIO = 0.15
+Y_MAX_PAD = 50  # max bps above highest bar so y-axis doesn't extend too far
 
 ASSETS_DETAIL_ITEMS = [
     "Banks",
@@ -161,12 +162,14 @@ def _pick_col(df: pd.DataFrame, preferred: str, fallback: str) -> str:
     raise ValueError(f"Kolon bulunamadı: '{preferred}' veya '{fallback}'")
 
 
-def _auto_y_range(values_bps, pad_ratio=0.15, min_span=80, min_floor=None):
+def _auto_y_range(values_bps, pad_ratio=0.15, min_span=80, min_floor=None, y_max_pad=None):
     v = np.asarray([float(x) for x in values_bps], dtype=float)
     vmin, vmax = float(np.nanmin(v)), float(np.nanmax(v))
     span = max(vmax - vmin, float(min_span))
     pad = span * float(pad_ratio)
     y0, y1 = vmin - pad, vmax + pad
+    if y_max_pad is not None:
+        y1 = min(y1, vmax + float(y_max_pad))
     if min_floor is not None:
         y0 = max(y0, float(min_floor))
     if y1 <= y0:
@@ -850,7 +853,7 @@ class NIMDecompositionEngine:
 # =========================
 class NIMWaterfallPlotter:
     @staticmethod
-    def _waterfall(fig_title: str, x, y, measures, customdata, hovertemplate, y_min_floor, y_min_span, y_pad_ratio):
+    def _waterfall(fig_title: str, x, y, measures, customdata, hovertemplate, y_min_floor, y_min_span, y_pad_ratio, y_max_pad=None):
         fig = go.Figure(
             go.Waterfall(
                 measure=measures,
@@ -862,7 +865,7 @@ class NIMWaterfallPlotter:
             )
         )
         fig.update_layout(title=fig_title, yaxis_title="bps", showlegend=False)
-        fig.update_yaxes(range=_auto_y_range(y, pad_ratio=y_pad_ratio, min_span=y_min_span, min_floor=y_min_floor))
+        fig.update_yaxes(range=_auto_y_range(y, pad_ratio=y_pad_ratio, min_span=y_min_span, min_floor=y_min_floor, y_max_pad=y_max_pad))
         return fig
 
     @classmethod
@@ -881,6 +884,7 @@ class NIMWaterfallPlotter:
         y_min_floor: int = 350,
         y_min_span: int = 80,
         y_pad_ratio: float = 0.15,
+        y_max_pad: Optional[int] = None,
     ):
         det_rate_col = _pick_col(df_detail, "dNIM_rate", "dNIM_rate_raw")
 
@@ -923,7 +927,7 @@ class NIMWaterfallPlotter:
         fig1 = cls._waterfall(
             f"{title_prefix} NIM Waterfall (bps): Mix vs Pricing",
             wf1_x, wf1_y, wf1_measures, custom1, hover1,
-            y_min_floor=y_min_floor, y_min_span=y_min_span, y_pad_ratio=y_pad_ratio
+            y_min_floor=y_min_floor, y_min_span=y_min_span, y_pad_ratio=y_pad_ratio, y_max_pad=y_max_pad
         )
 
         # WF2
@@ -981,7 +985,7 @@ class NIMWaterfallPlotter:
         fig2 = cls._waterfall(
             f"{title_prefix} NIM Pricing Drivers (Top {len(top2)} + Other, bps) — baseline = After Mix",
             wf2_x, wf2_y, wf2_measures, custom2, hover2,
-            y_min_floor=y_min_floor, y_min_span=y_min_span, y_pad_ratio=y_pad_ratio
+            y_min_floor=y_min_floor, y_min_span=y_min_span, y_pad_ratio=y_pad_ratio, y_max_pad=y_max_pad
         )
 
         # WF4
@@ -1027,7 +1031,7 @@ class NIMWaterfallPlotter:
         fig4 = cls._waterfall(
             f"{title_prefix} Economic Mix Drivers (Side benchmark, Top {len(top4)} + Other, bps) — baseline = Start",
             wf4_x, wf4_y, wf4_measures, custom4, hover4,
-            y_min_floor=y_min_floor, y_min_span=y_min_span, y_pad_ratio=y_pad_ratio
+            y_min_floor=y_min_floor, y_min_span=y_min_span, y_pad_ratio=y_pad_ratio, y_max_pad=y_max_pad
         )
 
         # Weight Change chart
@@ -1182,6 +1186,7 @@ def _build_figs_for_dates(source_name: str, date_0: str, date_1: str, nim_type: 
         y_min_floor=Y_MIN_FLOOR,
         y_min_span=Y_MIN_SPAN,
         y_pad_ratio=Y_PAD_RATIO,
+        y_max_pad=Y_MAX_PAD,
     )
     return nim_info, fig1, fig2, fig3, fig4
 
