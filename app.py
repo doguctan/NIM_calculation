@@ -889,7 +889,7 @@ class NIMWaterfallPlotter:
         pricing_decimal = float(df_detail[det_rate_col].sum())
         mix_decimal = (end_nim - start_nim) - pricing_decimal
 
-        all_bps_values = [_bps(start_nim), _bps(end_nim), _bps(start_nim + mix_decimal), _bps(pricing_decimal)]
+        all_bps_values = [_bps(start_nim), _bps(end_nim), _bps(start_nim + mix_decimal),]
         y_min_floor = min(all_bps_values) - 30
 
         # WF1
