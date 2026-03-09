@@ -345,7 +345,7 @@
       plot("wf3", figs.wf3, true);
       plot("wf4", figs.wf4, true);
       singleTitle.textContent = currentDataSource + " – " + (nimType === "FX" ? "FX NIM" : "TRY NIM");
-      elStatus.innerHTML = "nim_start: <code>" + (ni.nim_start != null ? Number(ni.nim_start).toFixed(4) : "—") + "</code> | nim_end: <code>" + (ni.nim_end != null ? Number(ni.nim_end).toFixed(4) : "—") + "</code> | ΔNIM: <code>" + (ni.nim_change != null ? (ni.nim_change * 10000).toFixed(1) + " bps" : "—") + "</code>";
+      elStatus.innerHTML = "nim_start: <code>" + (ni.nim_start != null ? (Number(ni.nim_start) * 10000).toFixed(1) + " bps" : "—") + "</code> | nim_end: <code>" + (ni.nim_end != null ? (Number(ni.nim_end) * 10000).toFixed(1) + " bps" : "—") + "</code> | ΔNIM: <code>" + (ni.nim_change != null ? (ni.nim_change * 10000).toFixed(1) + " bps" : "—") + "</code>";
     } catch (e) {
       showError(e.message || "Unknown error");
       elStatus.textContent = "";
