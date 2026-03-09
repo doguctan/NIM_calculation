@@ -177,7 +177,7 @@
       <li><a href="#" data-source="Simulation Scenario 1" class="active">Simulation Scenario 1</a></li>
       <li><a href="#" data-source="Simulation Scenario 2">Simulation Scenario 2</a></li>
       <li><a href="#" data-source="Realized NII">Realized NII</a></li>
-      <li><a href="#" data-source="comparison">Comparison</a></li>
+      <li><a href="#" data-source="Comparison">Comparison</a></li>
     </ul>
   </aside>
 
@@ -232,10 +232,10 @@
   const elErr = document.getElementById("err");
   const singleTitle = document.getElementById("single-title");
 
-  let currentDataSource = "{{ default_source }}"; // sidebar: data source or "comparison"
+  let currentDataSource = "{{ default_source }}";
 
   function getSourceForApi() {
-    return currentDataSource === "comparison" ? (DATA_SOURCES[0] || "Simulation Scenario 1") : currentDataSource;
+    return currentDataSource;
   }
 
   function setActiveNav() {

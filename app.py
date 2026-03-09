@@ -17,7 +17,7 @@ Features
 Run
     pip install -r requirements.txt
     python app.py
-    ...t
+    ...ttt
 """
 
 import json
@@ -52,6 +52,7 @@ DATA_SOURCES: Dict[str, str] = {
     "Simulation Scenario 1": "insert_data_scn1.xlsx",
     "Simulation Scenario 2": "insert_data_scn2.xlsx",
     "Realized NII": "insert_data_realized.xlsx",
+    "Comparison": "insert_data_comparison.xlsx",
 }
 DEFAULT_SOURCE = "Simulation Scenario 1"
 SHEET_NAME = 0
