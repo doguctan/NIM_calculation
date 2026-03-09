@@ -3,105 +3,310 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{{ title_prefix }} NIM Dashboard</title>
+  <title>NIM Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 16px; }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    select, button { padding: 6px 8px; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 12px; }
-    @media (min-width: 1100px) { .grid { grid-template-columns: 1fr 1fr; } }
-    .card { border: 1px solid #e6e6e6; border-radius: 10px; padding: 10px; }
-    .hint { color: #666; font-size: 13px; }
-    .error { color: #b00020; white-space: pre-wrap; }
-    .kpi { font-size: 13px; color: #333; }
-    .kpi code { background: #f6f6f6; padding: 2px 6px; border-radius: 6px; }
+    :root {
+      --sidebar-bg: #2d3748;
+      --sidebar-text: #e2e8f0;
+      --sidebar-active: #4a5568;
+      --main-bg: #f5f6f8;
+      --card-bg: #ffffff;
+      --card-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      --border: #e6e8eb;
+      --bar-blue: #3182ce;
+      --line-orange: #dd6b20;
+      --grid-soft: #eaecef;
+      --text-primary: #1a202c;
+      --text-secondary: #4a5568;
+      --error: #b00020;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', 'Roboto', sans-serif;
+      font-size: 14px;
+      color: var(--text-primary);
+      background: var(--main-bg);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 20px 0;
+      flex-shrink: 0;
+    }
+    .sidebar-brand {
+      font-weight: 700;
+      font-size: 18px;
+      padding: 0 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 16px;
+    }
+    .sidebar-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.5);
+      padding: 0 20px 8px;
+    }
+    .sidebar-nav {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .sidebar-nav li { margin: 0; }
+    .sidebar-nav a {
+      display: block;
+      padding: 10px 20px;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .sidebar-nav a:hover { background: rgba(255,255,255,0.06); }
+    .sidebar-nav a.active {
+      background: var(--sidebar-active);
+      border-left: 3px solid #63b3ed;
+      padding-left: 17px;
+    }
+
+    /* Main content */
+    .main {
+      flex: 1;
+      min-width: 0;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Top filter section */
+    .filters {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+    }
+    .filters label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+    .filters select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13px;
+      background: var(--card-bg);
+    }
+    .filters .status-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
+    .filters .status-text code {
+      background: #f0f2f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    /* Charts area */
+    .dashboard-title {
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin: 0 0 12px 0;
+      color: var(--text-primary);
+    }
+    .card .plot-container {
+      min-height: 320px;
+    }
+    .error-msg {
+      color: var(--error);
+      font-size: 13px;
+      white-space: pre-wrap;
+      padding: 12px;
+      background: #fff5f5;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
-  <h2>{{ title_prefix }} NIM Dashboard</h2>
+  <aside class="sidebar">
+    <div class="sidebar-brand">NII</div>
+    <div class="sidebar-title">Veri tipi</div>
+    <ul class="sidebar-nav">
+      <li><a href="#" data-source="Simulation Scenario 1" class="active">Simulation Scenario 1</a></li>
+      <li><a href="#" data-source="Simulation Scenario 2">Simulation Scenario 2</a></li>
+      <li><a href="#" data-source="Realized NII">Realized NII</a></li>
+      <li><a href="#" data-source="comparison">Comparison</a></li>
+    </ul>
+  </aside>
 
-  <div class="row">
-    <label>
-      data source:
-      <select id="source">
-        {% for s in data_sources %}
-          <option value="{{ s }}" {% if s == default_source %}selected{% endif %}>{{ s }}</option>
-        {% endfor %}
-      </select>
-    </label>
-
-    <label>
-      date_0:
-      <select id="date0">
-        {% for d in available_dates %}
+  <main class="main">
+    <div class="filters">
+      <label>
+        Veri Kaynağı
+        <select id="nimType">
+          <option value="TRY">TRY NIM</option>
+          <option value="FX">FX NIM</option>
+        </select>
+      </label>
+      <label>
+        Tarih (başlangıç)
+        <select id="date0">
+          {% for d in available_dates %}
           <option value="{{ d }}" {% if d == default_date_0 %}selected{% endif %}>{{ d }}</option>
-        {% endfor %}
-      </select>
-    </label>
-
-    <label>
-      date_1:
-      <select id="date1">
-        {% for d in available_dates %}
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        Tarih (bitiş)
+        <select id="date1">
+          {% for d in available_dates %}
           <option value="{{ d }}" {% if d == default_date_1 %}selected{% endif %}>{{ d }}</option>
-        {% endfor %}
-      </select>
-    </label>
+          {% endfor %}
+        </select>
+      </label>
+      <span class="status-text" id="status"></span>
+    </div>
 
-    <button id="refreshBtn">Refresh</button>
-    <button id="nimToggleBtn" data-nim-type="TRY">NIM tipi: TRY</button>
-    <span class="hint">Dropdown değişince otomatik günceller. NIM tipi butonundan TRY / FX arasında geçiş yapabilirsiniz.</span>
-  </div>
+    <div id="err" class="error-msg" style="display:none;"></div>
 
-  <div id="status" class="kpi" style="margin-top:10px;"></div>
-  <div id="err" class="error" style="margin-top:6px;"></div>
-
-  <div class="grid">
-    <div class="card"><div id="wf1"></div></div>
-    <div class="card"><div id="wf2"></div></div>
-    <div class="card"><div id="wf3"></div></div>
-    <div class="card"><div id="wf4"></div></div>
-  </div>
+    <div id="main-charts">
+      <h2 class="dashboard-title" id="single-title">TRY NIM Dashboard</h2>
+      <div class="charts-grid">
+        <div class="card"><div class="plot-container" id="wf1"></div></div>
+        <div class="card"><div class="plot-container" id="wf2"></div></div>
+        <div class="card"><div class="plot-container" id="wf3"></div></div>
+        <div class="card"><div class="plot-container" id="wf4"></div></div>
+      </div>
+    </div>
+  </main>
 
 <script>
-  const elSource = document.getElementById("source");
+(function() {
+  const DATA_SOURCES = {{ data_sources | tojson }};
+  const elNimType = document.getElementById("nimType");
   const elDate0 = document.getElementById("date0");
   const elDate1 = document.getElementById("date1");
-  const elErr   = document.getElementById("err");
-  const elStatus= document.getElementById("status");
-  const btn     = document.getElementById("refreshBtn");
-  const nimToggleBtn = document.getElementById("nimToggleBtn");
+  const elStatus = document.getElementById("status");
+  const elErr = document.getElementById("err");
+  const singleTitle = document.getElementById("single-title");
 
-  let currentNimType = (nimToggleBtn && nimToggleBtn.dataset.nimType) || "TRY";
+  let currentDataSource = "{{ default_source }}"; // sidebar: data source or "comparison"
+
+  function getSourceForApi() {
+    return currentDataSource === "comparison" ? (DATA_SOURCES[0] || "Simulation Scenario 1") : currentDataSource;
+  }
+
+  function setActiveNav() {
+    document.querySelectorAll(".sidebar-nav a").forEach(a => {
+      a.classList.toggle("active", a.dataset.source === currentDataSource);
+    });
+  }
+
+  function applyDashboardStyle(layout) {
+    return Object.assign({}, layout, {
+      font: { family: "'Inter', 'Roboto', sans-serif", size: 12 },
+      paper_bgcolor: "#ffffff",
+      plot_bgcolor: "#ffffff",
+      margin: { t: 48, r: 40, b: 48, l: 56 },
+      xaxis: Object.assign({}, layout.xaxis || {}, {
+        gridcolor: "#eaecef",
+        zerolinecolor: "#eaecef",
+        linecolor: "#e6e8eb",
+      }),
+      yaxis: Object.assign({}, layout.yaxis || {}, {
+        gridcolor: "#eaecef",
+        zerolinecolor: "#eaecef",
+        linecolor: "#e6e8eb",
+      }),
+    });
+  }
+
+  function applyBarOrangeStyle(data) {
+    return (data || []).map(trace => {
+      const t = Object.assign({}, trace);
+      if (t.type === "waterfall") return t;
+      if (t.mode && t.mode.indexOf("lines") !== -1) {
+        t.line = t.line || {};
+        t.line.color = "#dd6b20";
+      }
+      if (t.marker) {
+        t.marker = Object.assign({}, t.marker, { color: "#3182ce" });
+      }
+      return t;
+    });
+  }
+
+  function plot(id, fig, style) {
+    if (!fig || !fig.data) return;
+    const data = style ? applyBarOrangeStyle(fig.data) : fig.data;
+    const layout = applyDashboardStyle(fig.layout || {});
+    Plotly.react(id, data, layout, { responsive: true });
+  }
+
+  function showError(msg) {
+    elErr.textContent = msg || "";
+    elErr.style.display = msg ? "block" : "none";
+  }
 
   async function refreshDates() {
-    const src = elSource.value;
-    elErr.textContent = "";
-    elStatus.textContent = "Loading dates...";
-
-    const res = await fetch(`/api/dates?source=${encodeURIComponent(src)}`);
+    showError("");
+    elStatus.textContent = "Tarihler yükleniyor...";
+    const res = await fetch("/api/dates?source=" + encodeURIComponent(getSourceForApi()));
     const data = await res.json();
-
     if (!data.ok) {
       elStatus.textContent = "";
-      elErr.textContent = data.error || "Date load error";
+      showError(data.error || "Tarih yüklenemedi");
       return;
     }
-
     const dates = data.dates || [];
     elDate0.innerHTML = "";
     elDate1.innerHTML = "";
-
     dates.forEach(d => {
-      const o1 = document.createElement("option");
-      o1.value = d; o1.text = d;
-      const o2 = document.createElement("option");
-      o2.value = d; o2.text = d;
-      elDate0.appendChild(o1);
-      elDate1.appendChild(o2);
+      elDate0.appendChild(new Option(d, d));
+      elDate1.appendChild(new Option(d, d));
     });
-
     if (dates.length >= 2) {
       elDate0.value = dates[dates.length - 2];
       elDate1.value = dates[dates.length - 1];
@@ -109,58 +314,67 @@
       elDate0.value = dates[0];
       elDate1.value = dates[0];
     }
-
     await fetchAndRender();
   }
 
   async function fetchAndRender() {
-    elErr.textContent = "";
-    elStatus.textContent = "Loading...";
-
-    const src = elSource.value;
+    showError("");
+    const src = getSourceForApi();
     const d0 = elDate0.value;
     const d1 = elDate1.value;
-
-    const url = `/api/waterfalls?source=${encodeURIComponent(src)}&date_0=${encodeURIComponent(d0)}&date_1=${encodeURIComponent(d1)}&nim_type=${encodeURIComponent(currentNimType)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if (!data.ok) {
+    if (!d0 || !d1) {
       elStatus.textContent = "";
-      elErr.textContent = data.error || "Unknown error";
       return;
     }
+    elStatus.textContent = "Yükleniyor...";
 
-    const ni = data.nim_info || {};
-    const fmt = (x) => (typeof x === 'number' ? x.toFixed(6) : x);
-    elStatus.innerHTML =
-      `nim_start: <code>${fmt(ni.nim_start)}</code> | ` +
-      `nim_end: <code>${fmt(ni.nim_end)}</code> | ` +
-      `nim_change: <code>${fmt(ni.nim_change)}</code> | ` +
-      `recon_gap_after_scaling: <code>${fmt(ni.recon_gap_after_scaling)}</code>`;
-
-    const figs = data.figs;
-    Plotly.react("wf1", figs.wf1.data, figs.wf1.layout, {responsive: true});
-    Plotly.react("wf2", figs.wf2.data, figs.wf2.layout, {responsive: true});
-    Plotly.react("wf3", figs.wf3.data, figs.wf3.layout, {responsive: true});
-    Plotly.react("wf4", figs.wf4.data, figs.wf4.layout, {responsive: true});
+    const nimType = elNimType.value;
+    const url = "/api/waterfalls?source=" + encodeURIComponent(src) + "&date_0=" + encodeURIComponent(d0) + "&date_1=" + encodeURIComponent(d1) + "&nim_type=" + encodeURIComponent(nimType);
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) {
+        showError(data.error || "Unknown error");
+        elStatus.textContent = "";
+        return;
+      }
+      const ni = data.nim_info || {};
+      const figs = data.figs;
+      plot("wf1", figs.wf1, true);
+      plot("wf2", figs.wf2, true);
+      plot("wf3", figs.wf3, true);
+      plot("wf4", figs.wf4, true);
+      singleTitle.textContent = currentDataSource + " – " + (nimType === "FX" ? "FX NIM" : "TRY NIM");
+      elStatus.innerHTML = "nim_start: <code>" + (ni.nim_start != null ? Number(ni.nim_start).toFixed(4) : "—") + "</code> | nim_end: <code>" + (ni.nim_end != null ? Number(ni.nim_end).toFixed(4) : "—") + "</code> | ΔNIM: <code>" + (ni.nim_change != null ? (ni.nim_change * 10000).toFixed(1) + " bps" : "—") + "</code>";
+    } catch (e) {
+      showError(e.message || "Unknown error");
+      elStatus.textContent = "";
+    }
   }
 
-  elSource.addEventListener("change", refreshDates);
+  function setDataSource(source) {
+    currentDataSource = source;
+    setActiveNav();
+    singleTitle.textContent = source + " – " + (elNimType.value === "FX" ? "FX NIM" : "TRY NIM");
+    refreshDates();
+  }
+
+  document.querySelectorAll(".sidebar-nav a").forEach(a => {
+    a.addEventListener("click", function(e) {
+      e.preventDefault();
+      setDataSource(this.dataset.source);
+    });
+  });
+  elNimType.addEventListener("change", function() {
+    singleTitle.textContent = currentDataSource + " – " + (this.value === "FX" ? "FX NIM" : "TRY NIM");
+    fetchAndRender();
+  });
   elDate0.addEventListener("change", fetchAndRender);
   elDate1.addEventListener("change", fetchAndRender);
-  btn.addEventListener("click", fetchAndRender);
 
-  if (nimToggleBtn) {
-    nimToggleBtn.addEventListener("click", () => {
-      currentNimType = currentNimType === "TRY" ? "FX" : "TRY";
-      nimToggleBtn.dataset.nimType = currentNimType;
-      nimToggleBtn.textContent = `NIM tipi: ${currentNimType}`;
-      fetchAndRender();
-    });
-  }
-
+  setActiveNav();
   refreshDates();
+})();
 </script>
 </body>
 </html>
